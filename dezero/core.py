@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
+from numbers import Number
+from typing import List
 
 import numpy as np
 
@@ -9,7 +11,17 @@ import numpy as np
 # Variable
 # =============================================================================
 class Variable:
-    def __init__(self, data: np.ndarray | None) -> None:
+    def __init__(self, data: np.ndarray | List[Number] | Number | None) -> None:
+        if not isinstance(data, np.ndarray):
+            if (isinstance(data, List) and all(isinstance(d, Number) for d in data)) or (
+                isinstance(data, Number)
+            ):
+                data = np.array(data)
+            elif data is not None:
+                raise TypeError(f"{type(data)} is not supported")
+                pass
+            pass
+
         self.data: np.ndarray | None = data
         self.grad: np.ndarray | None = None
         self.creator: Function | None = None
@@ -20,6 +32,10 @@ class Variable:
         return
 
     def backward(self) -> None:
+        if self.grad is None:
+            self.grad = np.ones_like(self.data)
+            pass
+
         funcs = [self.creator]
         while funcs:
             f = funcs.pop()

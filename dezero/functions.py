@@ -1,6 +1,6 @@
 import numpy as np
 
-from dezero.core import Function
+from dezero.core import Function, Variable
 
 
 class Square(Function):
@@ -14,6 +14,10 @@ class Square(Function):
     pass
 
 
+def square(x: Variable) -> Variable:
+    return Square()(x)
+
+
 class Exp(Function):
     def forward(self, x: np.ndarray) -> np.ndarray:
         return np.exp(x)
@@ -23,3 +27,8 @@ class Exp(Function):
         return np.exp(x) * gy
 
     pass
+
+
+def exp(x: Variable) -> Variable:
+    return Exp()(x)
+

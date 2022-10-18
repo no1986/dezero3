@@ -1,6 +1,7 @@
 from step01 import main as step01  # noqa
 from step02 import main as step02  # noqa
 from step03 import main as step03  # noqa
+from step06 import main as step06  # noqa
 
 if __name__ == "__main__":
     for f in list(globals()):

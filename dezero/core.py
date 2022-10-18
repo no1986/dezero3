@@ -46,13 +46,21 @@ class Variable:
                 pass
 
             for x, gx in zip(f.inputs, gxs):
-                x.grad = gx
+                if x.grad is None:
+                    x.grad = gx
+                else:
+                    x.grad = x.grad + gx
+                    pass
 
                 if x.creator is not None:
                     funcs.append(x.creator)
                     pass
                 pass
             pass
+        return
+
+    def cleargrad(self) -> None:
+        self.grad = None
         return
 
     pass

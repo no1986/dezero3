@@ -1,1 +1,11 @@
-from dezero.core import Config, Function, Variable, add, no_grad, using_config  # noqa
+from dezero.core import (  # noqa
+    Config,
+    Function,
+    Variable,
+    no_grad,
+    setup_variable,
+    using_config,
+    add
+)
+
+setup_variable()

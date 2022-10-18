@@ -188,3 +188,23 @@ class Add(Function):
 
 def add(x0: Variable, x1: Variable) -> Variable:
     return Add()(x0, x1)
+
+
+class Mul(Function):
+    def forward(self, x0: np.ndarray, x1: np.ndarray) -> np.ndarray:
+        return x0 * x1
+
+    def backward(self, gy: np.ndarray) -> Tuple[np.ndarray]:
+        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        return (gy * x1, gy * x0)
+
+    pass
+
+
+def mul(x0: Variable, x1: Variable) -> Variable:
+    return Mul()(x0, x1)
+
+
+def setup_variable():
+    Variable.__add__ = add
+    Variable.__mul__ = mul

@@ -1,1 +1,2 @@
-from dezero.core import Variable, Function  # noqa
+import dezero.functions  # noqa
+from dezero.core import Function, Variable  # noqa

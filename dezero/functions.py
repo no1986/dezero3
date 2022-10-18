@@ -8,3 +8,10 @@ class Square(Function):
         return x**2
 
     pass
+
+
+class Exp(Function):
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        return np.exp(x)
+
+    pass

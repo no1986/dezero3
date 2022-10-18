@@ -7,6 +7,7 @@ from step08 import main as step08  # noqa
 from step09 import main as step09  # noqa
 from step13 import main as step13  # noqa
 from step14 import main as step14  # noqa
+from step16 import main as step16  # noqa
 
 if __name__ == "__main__":
     for f in list(globals()):

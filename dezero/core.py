@@ -25,18 +25,30 @@ class Variable:
         self.data: np.ndarray | None = data
         self.grad: np.ndarray | None = None
         self.creator: Function | None = None
+        self.generation: int = 0
         return
 
     def set_creator(self, func: Function) -> None:
         self.creator = func
+        self.generation = func.generation + 1
         return
 
     def backward(self) -> None:
+        def add_func(f: Function) -> None:
+            if f not in seen_set:
+                funcs.append(f)
+                seen_set.add(f)
+                funcs.sort(key=lambda x: x.generation)
+                pass
+            return
+
         if self.grad is None:
             self.grad = np.ones_like(self.data)
             pass
 
-        funcs = [self.creator]
+        funcs = []
+        seen_set = set()
+        add_func(self.creator)
         while funcs:
             f = funcs.pop()
             gys = [output.grad for output in f.outputs]
@@ -53,7 +65,7 @@ class Variable:
                     pass
 
                 if x.creator is not None:
-                    funcs.append(x.creator)
+                    add_func(x.creator)
                     pass
                 pass
             pass
@@ -73,6 +85,7 @@ class Function(metaclass=ABCMeta):
     def __init__(self) -> None:
         self.input: Variable | None = None
         self.output: Variable | None = None
+        self.generation: int = 0
         return
 
     def __call__(self, *inputs: Tuple[Variable]) -> Variable:
@@ -83,6 +96,7 @@ class Function(metaclass=ABCMeta):
             pass
         outputs = [Variable(y) for y in ys]
 
+        self.generation = max([x.generation for x in inputs])
         for output in outputs:
             output.set_creator(self)
             pass

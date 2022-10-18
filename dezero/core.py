@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+import weakref
 from abc import ABCMeta, abstractmethod
 from numbers import Number
 from typing import List, Tuple
@@ -8,32 +10,78 @@ import numpy as np
 
 
 # =============================================================================
+# Config
+# =============================================================================
+class Config:
+    enable_backprop = True
+    pass
+
+
+@contextlib.contextmanager
+def using_config(name: str, value: any) -> None:
+    old_value = getattr(Config, name)
+    setattr(Config, name, value)
+    try:
+        yield
+    finally:
+        setattr(Config, name, old_value)
+        pass
+    return
+
+
+def no_grad() -> None:
+    return using_config("enable_backprop", False)
+
+
+# =============================================================================
 # Variable
 # =============================================================================
 class Variable:
-    def __init__(self, data: np.ndarray | List[Number] | Number | None) -> None:
+    def __init__(self, data: np.ndarray | List[Number] | Number | None, name: str = None) -> None:
         if not isinstance(data, np.ndarray):
-            if (isinstance(data, List) and all(isinstance(d, Number) for d in data)) or (
-                isinstance(data, Number)
-            ):
+            try:
                 data = np.array(data)
-            elif data is not None:
+            except Exception:
                 raise TypeError(f"{type(data)} is not supported")
                 pass
             pass
 
         self.data: np.ndarray | None = data
+        self.name: str | None = name
         self.grad: np.ndarray | None = None
         self.creator: Function | None = None
         self.generation: int = 0
         return
+
+    @property
+    def shape(self) -> tuple:
+        return self.data.shape
+
+    @property
+    def ndim(self) -> int:
+        return self.data.ndim
+
+    @property
+    def size(self) -> int:
+        return self.data.size
+
+    @property
+    def dtype(self) -> np.dtype:
+        return self.data.dtype
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def __repr__(self) -> str:
+        p = str(self.data).replace("\n", "\n" + " " * 9)
+        return f"variable({p})"
 
     def set_creator(self, func: Function) -> None:
         self.creator = func
         self.generation = func.generation + 1
         return
 
-    def backward(self) -> None:
+    def backward(self, retain_grad: bool = False) -> None:
         def add_func(f: Function) -> None:
             if f not in seen_set:
                 funcs.append(f)
@@ -51,7 +99,7 @@ class Variable:
         add_func(self.creator)
         while funcs:
             f = funcs.pop()
-            gys = [output.grad for output in f.outputs]
+            gys = [output().grad for output in f.outputs]
             gxs = f.backward(*gys)
             if not isinstance(gxs, Tuple):
                 gxs = (gxs,)
@@ -66,6 +114,12 @@ class Variable:
 
                 if x.creator is not None:
                     add_func(x.creator)
+                    pass
+                pass
+
+            if not retain_grad:
+                for y in f.outputs:
+                    y().grad = None
                     pass
                 pass
             pass
@@ -96,13 +150,16 @@ class Function(metaclass=ABCMeta):
             pass
         outputs = [Variable(y) for y in ys]
 
-        self.generation = max([x.generation for x in inputs])
-        for output in outputs:
-            output.set_creator(self)
+        if Config.enable_backprop:
+            self.generation = max([x.generation for x in inputs])
+            for output in outputs:
+                output.set_creator(self)
+                pass
+
+            self.inputs = inputs
+            self.outputs = [weakref.ref(output) for output in outputs]
             pass
 
-        self.inputs = inputs
-        self.outputs = outputs
         return outputs if len(outputs) > 1 else outputs[0]
 
     @abstractmethod

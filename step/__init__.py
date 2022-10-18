@@ -8,6 +8,8 @@ from step09 import main as step09  # noqa
 from step13 import main as step13  # noqa
 from step14 import main as step14  # noqa
 from step16 import main as step16  # noqa
+from step18 import main as step18  # noqa
+from step19 import main as step19  # noqa
 
 if __name__ == "__main__":
     for f in list(globals()):

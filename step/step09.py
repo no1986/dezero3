@@ -1,4 +1,3 @@
-from numbers import Number
 import numpy as np  # noqa
 
 import dezero as dz # noqa

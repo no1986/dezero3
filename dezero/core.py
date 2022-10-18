@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from numbers import Number
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 
@@ -39,11 +39,18 @@ class Variable:
         funcs = [self.creator]
         while funcs:
             f = funcs.pop()
-            x, y = f.input, f.output
-            x.grad = f.backward(y.grad)
+            gys = [output.grad for output in f.outputs]
+            gxs = f.backward(*gys)
+            if not isinstance(gxs, Tuple):
+                gxs = (gxs,)
+                pass
 
-            if x.creator is not None:
-                funcs.append(x.creator)
+            for x, gx in zip(f.inputs, gxs):
+                x.grad = gx
+
+                if x.creator is not None:
+                    funcs.append(x.creator)
+                    pass
                 pass
             pass
         return
@@ -60,14 +67,21 @@ class Function(metaclass=ABCMeta):
         self.output: Variable | None = None
         return
 
-    def __call__(self, input: Variable) -> Variable:
-        x = input.data
-        y = self.forward(x)
-        output = Variable(y)
-        output.set_creator(self)
-        self.input = input
-        self.output = output
-        return output
+    def __call__(self, *inputs: Tuple[Variable]) -> Variable:
+        xs = [x.data for x in inputs]
+        ys = self.forward(*xs)
+        if not isinstance(ys, Tuple):
+            ys = (ys,)
+            pass
+        outputs = [Variable(y) for y in ys]
+
+        for output in outputs:
+            output.set_creator(self)
+            pass
+
+        self.inputs = inputs
+        self.outputs = outputs
+        return outputs if len(outputs) > 1 else outputs[0]
 
     @abstractmethod
     def forward(self):
@@ -78,3 +92,20 @@ class Function(metaclass=ABCMeta):
         pass
 
     pass
+
+
+# =============================================================================
+# 四則演算 / 演算子のオーバーロード
+# =============================================================================
+class Add(Function):
+    def forward(self, x0: np.ndarray, x1: np.ndarray) -> np.ndarray:
+        return x0 + x1
+
+    def backward(self, gy: np.ndarray) -> Tuple[np.ndarray]:
+        return (gy, gy)
+
+    pass
+
+
+def add(x0: Variable, x1: Variable) -> Variable:
+    return Add()(x0, x1)

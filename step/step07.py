@@ -14,6 +14,7 @@ def main():
     a = A(x)
     b = B(a)
     y = C(b)
+    print(y.data)
 
     y.grad = np.array(1.0)
     y.backward()

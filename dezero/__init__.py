@@ -5,7 +5,6 @@ from dezero.core import (  # noqa
     no_grad,
     setup_variable,
     using_config,
-    add
 )
 
 setup_variable()

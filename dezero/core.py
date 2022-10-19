@@ -37,6 +37,8 @@ def no_grad() -> None:
 # Variable
 # =============================================================================
 class Variable:
+    __array_priority__ = 200
+
     def __init__(self, data: np.ndarray | List[Number] | Number | None, name: str = None) -> None:
         if not isinstance(data, np.ndarray):
             try:
@@ -132,6 +134,13 @@ class Variable:
     pass
 
 
+def as_variable(obj):
+    if not isinstance(obj, Variable):
+        obj = Variable(obj)
+        pass
+    return obj
+
+
 # =============================================================================
 # Function
 # =============================================================================
@@ -143,6 +152,8 @@ class Function(metaclass=ABCMeta):
         return
 
     def __call__(self, *inputs: Tuple[Variable]) -> Variable:
+        inputs = [as_variable(x) for x in inputs]
+
         xs = [x.data for x in inputs]
         ys = self.forward(*xs)
         if not isinstance(ys, Tuple):
@@ -186,7 +197,7 @@ class Add(Function):
     pass
 
 
-def add(x0: Variable, x1: Variable) -> Variable:
+def add(x0: Variable, x1: Variable | np.ndarray | list | Number) -> Variable:
     return Add()(x0, x1)
 
 
@@ -201,10 +212,88 @@ class Mul(Function):
     pass
 
 
-def mul(x0: Variable, x1: Variable) -> Variable:
+def mul(x0: Variable, x1: Variable | np.ndarray | list | Number) -> Variable:
     return Mul()(x0, x1)
+
+
+class Neg(Function):
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        return -x
+
+    def backward(self, gy: np.ndarray) -> np.ndarray:
+        return -gy
+
+    pass
+
+
+def neg(x: Variable) -> Variable:
+    return Neg()(x)
+
+
+class Sub(Function):
+    def forward(self, x0: np.ndarray, x1: np.ndarray) -> np.ndarray:
+        return x0 - x1
+
+    def backward(self, gy: np.ndarray) -> Tuple[np.ndarray]:
+        return (gy, -gy)
+
+
+def sub(x0: Variable, x1: Variable | np.ndarray | list | Number) -> Variable:
+    return Sub()(x0, x1)
+
+
+def rsub(x0: Variable, x1: np.ndarray | list | Number) -> Variable:
+    x1 = as_variable(x1)
+    return Sub()(x1, x0)
+
+
+class Div(Function):
+    def forward(self, x0: np.ndarray, x1: np.ndarray) -> np.ndarray:
+        return x0 / x1
+
+    def backward(self, gy: np.ndarray) -> Tuple[np.ndarray]:
+        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        gx0 = gy / x1
+        gx1 = gy * (-x0 / x1**2)
+        return (gx0, gx1)
+
+
+def div(x0: Variable, x1: Variable | np.ndarray | list | Number) -> Variable:
+    x1 = as_variable(x1)
+    return Div()(x0, x1)
+
+
+def rdiv(x0: Variable, x1: np.ndarray | list | Number) -> Variable:
+    x1 = as_variable(x1)
+    return Div()(x1, x0)
+
+
+class Pow(Function):
+    def __init__(self, c: Number) -> None:
+        self.c: Number = c
+        return
+
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        return x**self.c
+
+    def backward(self, gy: np.ndarray) -> np.ndarray:
+        x = self.inputs[0].data
+        c = self.c
+        return c * x ** (c - 1) * gy
+
+
+def pow(x: Variable, c: Variable | list | Number) -> Variable:
+    return Pow(c)(x)
 
 
 def setup_variable():
     Variable.__add__ = add
+    Variable.__radd__ = add
     Variable.__mul__ = mul
+    Variable.__rmul__ = mul
+    Variable.__neg__ = neg
+    Variable.__sub__ = sub
+    Variable.__rsub__ = rsub
+    Variable.__truediv__ = div
+    Variable.__rtruediv__ = rdiv
+    Variable.__pow__ = pow

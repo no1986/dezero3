@@ -1,14 +1,15 @@
 import numpy as np  # noqa
 
-import dezero as dz  # noqa
+from dezero import Variable  # noqa
 from dezero import functions as F  # noqa
+from dezero.core import add  # noqa
 
 
 def main():
-    x0 = dz.Variable(2.0)
-    x1 = dz.Variable(3.0)
+    x0 = Variable(2.0)
+    x1 = Variable(3.0)
 
-    y = dz.add(F.square(x0), F.square(x1))
+    y = add(F.square(x0), F.square(x1))
     y.backward()
     print(y.data)
     print(x0.grad, x1.grad)

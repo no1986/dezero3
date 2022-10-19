@@ -11,6 +11,8 @@ from step16 import main as step16  # noqa
 from step18 import main as step18  # noqa
 from step19 import main as step19  # noqa
 from step20 import main as step20  # noqa
+from step21 import main as step21  # noqa
+from step22 import main as step22  # noqa
 
 if __name__ == "__main__":
     for f in list(globals()):

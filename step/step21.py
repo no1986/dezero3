@@ -1,17 +1,20 @@
 import numpy as np  # noqa
 
-from dezero import Variable  # noqa
+from dezero import Variable, no_grad  # noqa
 from dezero import functions as F  # noqa
-from dezero.core import add  # noqa
 
 
 def main():
     x = Variable(2.0)
-    a = F.square(x)
-    y = add(F.square(a), F.square(a))
+    y = 3.0 * x + 1.0
     y.backward()
-    print(y.data)
-    print(x.grad)
+
+    print(y, x.grad)
+
+    x.cleargrad()
+    y = np.array([2.0]) * x
+    y.backward()
+    print(y, x.grad)
     return
 
 

@@ -1,11 +1,11 @@
 import numpy as np  # noqa
 
-import dezero as dz  # noqa
+from dezero import Variable  # noqa
 
 
 def main():
     data = np.array(1.0)
-    x = dz.Variable(data)
+    x = Variable(data)
     print(x.data)
     return
 
